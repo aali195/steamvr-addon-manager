@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SteamVrAddonManager</AssemblyName>
+    <RootNamespace>SteamVrAddonManager</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Product>SteamVR Addon Manager</Product>
+    <AssemblyTitle>SteamVR Addon Manager</AssemblyTitle>
+    <Description>Manage SteamVR drivers and startup overlays.</Description>
+    <Company>SteamVR Addon Manager</Company>
+    <Copyright>Copyright (c) 2026 SteamVR Addon Manager contributors</Copyright>
+  </PropertyGroup>
+
+  <!-- Small framework-dependent single-file exe by default (requires the .NET 8 Desktop Runtime).
+       Add -p:BundleRuntime=true for a self-contained single-file exe that needs no runtime. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained Condition="'$(BundleRuntime)' == 'true'">true</SelfContained>
+    <SelfContained Condition="'$(BundleRuntime)' != 'true'">false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile Condition="'$(BundleRuntime)' == 'true'">true</EnableCompressionInSingleFile>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <!-- Ship the settings file next to the exe so it is obvious the app keeps data there.
+       Source name avoids the .gitignore rule for the runtime settings.json. -->
+  <ItemGroup>
+    <Content Include="Runtime\settings.default.json" Link="settings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Create the (empty) presets folder in the build/publish output. -->
+  <Target Name="MakePresetsFolder" AfterTargets="Build">
+    <MakeDir Directories="$(OutDir)presets" />
+  </Target>
+  <Target Name="MakePresetsFolderOnPublish" AfterTargets="Publish">
+    <MakeDir Directories="$(PublishDir)presets" Condition="'$(PublishDir)' != ''" />
+  </Target>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SteamVrAddonManager.Tests" />
+  </ItemGroup>
+
+</Project>

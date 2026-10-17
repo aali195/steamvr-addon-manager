@@ -1,0 +1,18 @@
+## Build output
+bin/
+obj/
+
+## Rider / VS
+.idea/
+.vs/
+*.user
+
+## Published artifacts
+publish/
+out/
+
+## Portable runtime data (created next to the exe when the app runs)
+settings.json
+presets/
+*.bak
+*.tmp

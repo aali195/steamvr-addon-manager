@@ -1,0 +1,81 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # 10.x provides the SDK (and .slnx support); 8.x provides the runtime used to run the tests.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+
+      - name: Restore
+        run: dotnet restore SteamVrAddonManager.slnx
+
+      - name: Build
+        run: dotnet build SteamVrAddonManager.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test SteamVrAddonManager.slnx -c Release --no-build --verbosity normal
+
+  release:
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Read version from project
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content src/SteamVrAddonManager/SteamVrAddonManager.csproj
+          $version = ($project.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Publish framework-dependent exe
+        run: dotnet publish src/SteamVrAddonManager/SteamVrAddonManager.csproj -c Release -r win-x64 -o out/framework
+
+      - name: Publish self-contained exe
+        run: dotnet publish src/SteamVrAddonManager/SteamVrAddonManager.csproj -c Release -r win-x64 -p:BundleRuntime=true -o out/selfcontained
+
+      - name: Stage release files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out/release | Out-Null
+          Copy-Item out/framework/SteamVrAddonManager.exe out/release/SteamVrAddonManager.exe
+          Copy-Item out/selfcontained/SteamVrAddonManager.exe out/release/SteamVrAddonManager-standalone.exe
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: SteamVR Addon Manager v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            out/release/SteamVrAddonManager.exe
+            out/release/SteamVrAddonManager-standalone.exe
