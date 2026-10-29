@@ -3,6 +3,7 @@ name: build
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -37,7 +38,7 @@ jobs:
 
   release:
     needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,14 +49,6 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
-
-      - name: Read version from project
-        id: version
-        shell: pwsh
-        run: |
-          [xml]$project = Get-Content src/SteamVrAddonManager/SteamVrAddonManager.csproj
-          $version = ($project.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
-          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Publish framework-dependent exe
         run: dotnet publish src/SteamVrAddonManager/SteamVrAddonManager.csproj -c Release -r win-x64 -o out/framework
@@ -73,8 +66,8 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: SteamVR Addon Manager v${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          name: SteamVR Addon Manager ${{ github.ref_name }}
           generate_release_notes: true
           files: |
             out/release/SteamVrAddonManager.exe

@@ -5,6 +5,8 @@ SteamVR's config files (before SteamVR is run). Portable, single-file exe, no in
 
 NOTE: Written with the help of an LLM
 
+![SteamVR Addon Manager screenshot](docs/screenshot.png)
+
 ## Requirements
 
 - Windows 10/11
